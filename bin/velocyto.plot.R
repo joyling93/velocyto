@@ -41,26 +41,27 @@ names(x = ident.colors) <- levels(x = obj)
 cell.colors <- ident.colors[Idents(object = obj)]
 names(x = cell.colors) <- colnames(x = obj)
 
+##获取对应velocyto文件
+bm<-readRDS(velocyto_rds)
+#统一细胞数
+bm <- subset(x = bm, cells = colnames(obj))
+# exonic read (spliced) expression matrix
+emat <- bm$spliced;
+# intronic read (unspliced) expression matrix
+nmat <- bm$unspliced
+# filter expression matrices based on some minimum max-cluster averages
+emat <- filter.genes.by.cluster.expression(emat,cell.colors,min.max.cluster.average = 0.2)
+nmat <- filter.genes.by.cluster.expression(nmat,cell.colors,min.max.cluster.average = 0.05)
+saveRDS(emat,file.path(outdir,'splice_ma.rds'))
+saveRDS(nmat,file.path(outdir,'unsplice_ma.rds'))
+# look at the resulting gene set
+length(intersect(rownames(emat),rownames(nmat)))
+intersect(rownames(emat),rownames(nmat))[1:5]
+#gene γ 值计算
+fit.quantile <- 0.02
+n.cores<-n.cores
+
 if(is.null(old_fit)){
-        ##获取对应velocyto文件
-        bm<-readRDS(velocyto_rds)
-        #统一细胞数
-        bm <- subset(x = bm, cells = colnames(obj))
-        # exonic read (spliced) expression matrix
-        emat <- bm$spliced;
-        # intronic read (unspliced) expression matrix
-        nmat <- bm$unspliced
-        # filter expression matrices based on some minimum max-cluster averages
-        emat <- filter.genes.by.cluster.expression(emat,cell.colors,min.max.cluster.average = 0.2)
-        nmat <- filter.genes.by.cluster.expression(nmat,cell.colors,min.max.cluster.average = 0.05)
-        saveRDS(emat,file.path(outdir,'splice_ma.rds'))
-        saveRDS(nmat,file.path(outdir,'unsplice_ma.rds'))
-        # look at the resulting gene set
-        length(intersect(rownames(emat),rownames(nmat)))
-        intersect(rownames(emat),rownames(nmat))[1:5]
-        #gene γ 值计算
-        fit.quantile <- 0.02
-        n.cores<-n.cores
         vel <- gene.relative.velocity.estimates(emat,nmat,deltaT=1,kCells = 5,fit.quantile = fit.quantile,n.cores=n.cores)#n.cores
         saveRDS(vel,file.path(outdir,'oldfit.rds'))
 }else{
