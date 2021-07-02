@@ -15,6 +15,7 @@ parser$add_argument("--reduction_space", help="seurat_obj 的降维空间，默�
 parser$add_argument("--default_assay", help="seurat_obj 的 default_assay，默认是 RNA。"
                     ,default='RNA')
 parser$add_argument("--gene2show", help="需要画图的基因列表，多个基因可以,分隔，没有 fit 出 γ 值的基因不会出出图。",default=NULL)
+parser$add_argument("--old_fit", help="oldfit.rds。不再处理原始 velocyto.rds ，使用已有拟合结果，可用于降低画图时间",default=NULL)
 parser$add_argument("--n.cores", help="需求核数，默认是 1。",default=1)
 
 
@@ -24,8 +25,9 @@ velocyto_rds <- args$velocyto_rds
 seurat_obj2project <- args$seurat_obj2project
 outdir <- args$outdir
 reduction_space <- args$reduction_space
-gene2show<-strsplit(args$gene2show,',')[[1]]
 default_assay <- args$default_assay
+gene2show<-strsplit(args$gene2show,',')[[1]]
+old_fit <- args$old_fit
 n.cores <- args$n.cores
 
 ##获取已经聚类的seurat对象
@@ -39,27 +41,32 @@ names(x = ident.colors) <- levels(x = obj)
 cell.colors <- ident.colors[Idents(object = obj)]
 names(x = cell.colors) <- colnames(x = obj)
 
-##获取对应velocyto文件
-bm<-readRDS(velocyto_rds)
-#统一细胞数
-bm <- subset(x = bm, cells = colnames(obj))
-# exonic read (spliced) expression matrix
-emat <- bm$spliced;
-# intronic read (unspliced) expression matrix
-nmat <- bm$unspliced
-# filter expression matrices based on some minimum max-cluster averages
-emat <- filter.genes.by.cluster.expression(emat,cell.colors,min.max.cluster.average = 0.2)
-nmat <- filter.genes.by.cluster.expression(nmat,cell.colors,min.max.cluster.average = 0.05)
-saveRDS(emat,file.path(outdir,'splice_ma.rds'))
-saveRDS(nmat,file.path(outdir,'unsplice_ma.rds'))
-# look at the resulting gene set
-length(intersect(rownames(emat),rownames(nmat)))
-intersect(rownames(emat),rownames(nmat))[1:5]
-#gene γ 值计算
-fit.quantile <- 0.02
-n.cores<-n.cores
-vel <- gene.relative.velocity.estimates(emat,nmat,deltaT=1,kCells = 5,fit.quantile = fit.quantile,n.cores=n.cores)#n.cores
-saveRDS(vel,file.path(outdir,'oldfit.rds'))
+if(is.null(old_fit)){
+        ##获取对应velocyto文件
+        bm<-readRDS(velocyto_rds)
+        #统一细胞数
+        bm <- subset(x = bm, cells = colnames(obj))
+        # exonic read (spliced) expression matrix
+        emat <- bm$spliced;
+        # intronic read (unspliced) expression matrix
+        nmat <- bm$unspliced
+        # filter expression matrices based on some minimum max-cluster averages
+        emat <- filter.genes.by.cluster.expression(emat,cell.colors,min.max.cluster.average = 0.2)
+        nmat <- filter.genes.by.cluster.expression(nmat,cell.colors,min.max.cluster.average = 0.05)
+        saveRDS(emat,file.path(outdir,'splice_ma.rds'))
+        saveRDS(nmat,file.path(outdir,'unsplice_ma.rds'))
+        # look at the resulting gene set
+        length(intersect(rownames(emat),rownames(nmat)))
+        intersect(rownames(emat),rownames(nmat))[1:5]
+        #gene γ 值计算
+        fit.quantile <- 0.02
+        n.cores<-n.cores
+        vel <- gene.relative.velocity.estimates(emat,nmat,deltaT=1,kCells = 5,fit.quantile = fit.quantile,n.cores=n.cores)#n.cores
+        saveRDS(vel,file.path(outdir,'oldfit.rds'))
+}else{
+        vel <- readRDS(old_fit)
+}
+
 
 #在降维空间画图
 arrow.scale=3; cell.alpha=0.4; cell.cex=1;
