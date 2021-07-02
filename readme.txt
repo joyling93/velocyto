@@ -4,9 +4,10 @@
 简要使用方法
 先运行 run.sh 获得单样本 velocyto.rds，再运行 plot.sh 画图。
 
-由于 RNA velocity 分析的前提是从单细胞 RNA-seq 数据中区分未成熟 mRNA (unspliced) 和成熟 mRNA(spliced)，所以需要从与基因组进行比对后得到 bam 文件中提取 spliced，unspliced 和 ambiguous 信息。得到 .loom 为后缀的文件。由于原始 loom 文件会修改 cell barcode，velocyto.prep.R 会额外将其还原后处理成 seurat 对象并保存为 velocyto.rds 以便下游分析。
+由于 RNA velocity 分析的前提是从单细胞 RNA-seq 数据中区分未成熟 mRNA (unspliced) 和成熟 mRNA(spliced)，所以需要从与基因组进行比对后得到 bam 文件中提取 spliced，unspliced 和 ambiguous 信息。得到 .loom 为后缀的文件。由于原始 loom 文件会修改 cell barcode，velocyto.prep.R 会额外将其还原后处理成 seurat 对象并保存为 velocyto.rds 以便下游分析。多样本可直接 merge 合并后统一分析。
 
-除 velocyto.rds 外，velocyto.plot.R 还需提供用于提供聚类和降维信息的 seurat 对象，即可在该对象的降维空间投射 velocyto 预测结果（即箭头）。
+除 velocyto.rds 外，velocyto.plot.R 还需提供用于提供聚类和降维信息的 seurat 对象，即可在该对象的降维空间投射 velocyto 预测结果（即箭头）。注意 seurat 对象的 cell barcodes 命名须
+和 velocyto.rds 保持一致。
 
 结果文件说明
 run.sh：
